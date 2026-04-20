@@ -1,0 +1,38 @@
+import bisect
+
+class SummaryRanges:
+    def __init__(self):
+        # List of intervals stored as [start, end]
+        self.intervals = []
+
+    def addNum(self, value: int) -> None:
+        # Find the insertion point using the start value of intervals
+        # intervals[i][0] is used for comparison
+        keys = [i[0] for i in self.intervals]
+        idx = bisect.bisect_left(keys, value)
+        
+        # Check if value can be merged with neighbors
+        # Potential overlap/merge with interval at idx-1
+        left_merge = idx > 0 and self.intervals[idx-1][1] >= value - 1
+        # Potential overlap/merge with interval at idx
+        right_merge = idx < len(self.intervals) and self.intervals[idx][0] <= value + 1
+
+        if left_merge and right_merge:
+            # Connects two existing intervals: [start, val-1] + val + [val+1, end]
+            self.intervals[idx-1][1] = self.intervals[idx][1]
+            self.intervals.pop(idx)
+        elif left_merge:
+            # Extend the end of the left interval
+            self.intervals[idx-1][1] = max(self.intervals[idx-1][1], value)
+        elif right_merge:
+            # Extend the start of the right interval
+            self.intervals[idx][0] = min(self.intervals[idx][0], value)
+        else:
+            # Check if value is already contained in a range (handled by left_merge check mostly)
+            # but if not merging, we insert a new single-point interval
+            if idx > 0 and self.intervals[idx-1][1] >= value:
+                return
+            self.intervals.insert(idx, [value, value])
+
+    def getIntervals(self) -> list[list[int]]:
+        return self.intervals
