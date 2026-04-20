@@ -1,0 +1,26 @@
+class StreamChecker:
+    def __init__(self, words: list[str]):
+        self.trie = {}
+        self.stream = []
+        # Insert words into the trie in reverse order
+        for word in words:
+            node = self.trie
+            for char in reversed(word):
+                if char not in node:
+                    node[char] = {}
+                node = node[char]
+            node['#'] = True  # End of word marker
+
+    def query(self, letter: str) -> bool:
+        self.stream.append(letter)
+        node = self.trie
+        
+        # Check the stream from newest to oldest
+        for i in range(len(self.stream) - 1, -1, -1):
+            char = self.stream[i]
+            if char not in node:
+                return False
+            node = node[char]
+            if '#' in node:
+                return True
+        return Fals
