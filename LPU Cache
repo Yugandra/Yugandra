@@ -1,0 +1,74 @@
+import collections
+
+class Node:
+    def __init__(self, key, val):
+        self.key = key
+        self.val = val
+        self.freq = 1
+        self.prev = self.next = None
+
+class DoublyLinkedList:
+    def __init__(self):
+        self.left, self.right = Node(0, 0), Node(0, 0)
+        self.left.next, self.right.prev = self.right, self.left
+        self.size = 0
+
+    def insert(self, node):
+        prev, nxt = self.right.prev, self.right
+        prev.next = nxt.prev = node
+        node.prev, node.next = prev, nxt
+        self.size += 1
+
+    def remove(self, node):
+        prev, nxt = node.prev, node.next
+        prev.next, nxt.prev = nxt, prev
+        self.size -= 1
+
+    def pop_left(self):
+        res = self.left.next
+        self.remove(res)
+        return res
+
+class LFUCache:
+    def __init__(self, capacity: int):
+        self.cap = capacity
+        self.min_freq = 0
+        self.key_map = {} # Maps key to Node
+        self.freq_map = collections.defaultdict(DoublyLinkedList) # Maps freq to DLL
+
+    def _update(self, node):
+        """Moves a node to a higher frequency list."""
+        freq = node.freq
+        self.freq_map[freq].remove(node)
+        
+        # If the current min_freq list is empty, increment min_freq
+        if freq == self.min_freq and self.freq_map[freq].size == 0:
+            self.min_freq += 1
+            
+        node.freq += 1
+        self.freq_map[node.freq].insert(node)
+
+    def get(self, key: int) -> int:
+        if key not in self.key_map:
+            return -1
+        node = self.key_map[key]
+        self._update(node)
+        return node.val
+
+    def put(self, key: int, value: int) -> None:
+        if self.cap == 0: return
+
+        if key in self.key_map:
+            node = self.key_map[key]
+            node.val = value
+            self._update(node)
+        else:
+            if len(self.key_map) >= self.cap:
+                # Evict LRU node from the min_freq list
+                lru_node = self.freq_map[self.min_freq].pop_left()
+                del self.key_map[lru_node.key]
+            
+            new_node = Node(key, value)
+            self.key_map[key] = new_node
+            self.freq_map[1].insert(new_node)
+            self.min_freq = 1
