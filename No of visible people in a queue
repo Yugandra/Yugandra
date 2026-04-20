@@ -1,0 +1,22 @@
+class Solution:
+    def canSeePersonsCount(self, heights: List[int]) -> List[int]:
+        n = len(heights)
+        ans = [0] * n
+        stack = []  # Monotonic decreasing stack (bottom to top)
+        
+        # Process from right to left
+        for i in range(n - 1, -1, -1):
+            # 1. You can see everyone shorter than you in the stack
+            while stack and stack[-1] < heights[i]:
+                ans[i] += 1
+                stack.pop()
+            
+            # 2. If someone is still in the stack, they are taller than you
+            # You can see them, but they block anyone behind them
+            if stack:
+                ans[i] += 1
+            
+            # 3. Add yourself to the stack for those to your left
+            stack.append(heights[i])
+            
+        return ans
