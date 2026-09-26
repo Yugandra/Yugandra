@@ -1,0 +1,82 @@
+#include <stdbool.h>
+#include <stdlib.h>
+
+#define HASH_SIZE 10007 // A prime number for bucket distribution
+
+// Hash map node definition
+typedef struct Node {
+    int remainder;
+    int index;
+    struct Node* next;
+} Node;
+
+// Inserts a remainder and its first-seen index into the map if it doesn't exist.
+// Returns the index if found, or -2 if it's the first time seeing this remainder.
+int findOrInsert(Node** hashTable, int remainder, int currentIndex) {
+    // Map negative remainders to positive to avoid out-of-bound issues
+    int bucket = (remainder % HASH_SIZE + HASH_SIZE) % HASH_SIZE;
+    
+    Node* curr = hashTable[bucket];
+    while (curr != NULL) {
+        if (curr->remainder == remainder) {
+            return curr->index; // Remainder already exists, return its first index
+        }
+        curr = curr->next;
+    }
+    
+    // Remainder not found; create a new node and add it to the bucket
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->remainder = remainder;
+    newNode->index = currentIndex;
+    newNode->next = hashTable[bucket];
+    hashTable[bucket] = newNode;
+    
+    return -2; // Sentinel value indicating a new insertion
+}
+
+bool checkSubarraySum(int* nums, int numsSize, int k) {
+    if (numsSize < 2) return false;
+
+    // Allocate memory for the hash table buckets
+    Node** hashTable = (Node**)calloc(HASH_SIZE, sizeof(Node*));
+    
+    // Base Case: A prefix sum that is perfectly divisible by k at the start
+    // equivalent to remainder 0 seen at index -1
+    findOrInsert(hashTable, 0, -1);
+    
+    int runningSum = 0;
+    bool found = false;
+    
+    for (int i = 0; i < numsSize; i++) {
+        runningSum += nums[i];
+        
+        // Compute the modular remainder safely
+        int remainder = (k == 0) ? runningSum : (runningSum % k);
+        
+        // Handle negative values if they appear in nums
+        if (remainder < 0) remainder += k;
+
+        int prevIndex = findOrInsert(hashTable, remainder, i);
+        
+        // If the remainder has been seen before and the distance between 
+        // the indices is at least 2, we found our valid subarray!
+        if (prevIndex != -2) {
+            if (i - prevIndex >= 2) {
+                found = true;
+                break;
+            }
+        }
+    }
+    
+    // Free all dynamically allocated memory in the hash map
+    for (int i = 0; i < HASH_SIZE; i++) {
+        Node* curr = hashTable[i];
+        while (curr != NULL) {
+            Node* temp = curr;
+            curr = curr->next;
+            free(temp);
+        }
+    }
+    free(hashTable);
+}
+    return found;
